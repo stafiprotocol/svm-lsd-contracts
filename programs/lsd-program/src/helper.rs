@@ -1,4 +1,5 @@
-pub const POOL_SEED: &'static [u8] = b"pool_seed";
+pub const STAKE_MANAGER_SEED: &'static [u8] = b"stake_manager_seed";
+pub const TOKEN_MINT_SEED: &'static [u8] = b"token_mint_seed";
 
 pub const CAL_BASE: u64 = 1_000_000_000;
 pub const DEFAULT_RATE: u64 = 1_000_000_000;

@@ -33,16 +33,6 @@ pub struct CreateMetadataAccountV3<'info> {
 
     #[account(
         mut,
-        seeds = [
-            helper::POOL_SEED,
-            &stake_manager.key().to_bytes(),
-        ],
-        bump = stake_manager.pool_seed_bump
-    )]
-    pub stake_pool: SystemAccount<'info>,
-
-    #[account(
-        mut,
         address = stake_manager.lsd_token_mint @Errors::LsdTokenMintAccountNotMatch
     )]
     pub lsd_token_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -64,8 +54,9 @@ impl<'info> CreateMetadataAccountV3<'info> {
         msg!("Creating metadata v3");
 
         let signer_seeds: &[&[&[u8]]] = &[&[
-            helper::POOL_SEED,
-            &self.stake_manager.key().to_bytes(),
+            helper::STAKE_MANAGER_SEED,
+            &self.stake_manager.creator.to_bytes(),
+            &[self.stake_manager.index],
             &[self.stake_manager.pool_seed_bump],
         ]];
 
@@ -75,8 +66,8 @@ impl<'info> CreateMetadataAccountV3<'info> {
                 CreateMetadataAccountsV3 {
                     metadata: self.metadata_account.to_account_info(),
                     mint: self.lsd_token_mint.to_account_info(),
-                    mint_authority: self.stake_pool.to_account_info(),
-                    update_authority: self.stake_pool.to_account_info(),
+                    mint_authority: self.stake_manager.to_account_info(),
+                    update_authority: self.stake_manager.to_account_info(),
                     payer: self.fee_and_rent_payer.to_account_info(),
                     system_program: self.system_program.to_account_info(),
                     rent: self.rent.to_account_info(),

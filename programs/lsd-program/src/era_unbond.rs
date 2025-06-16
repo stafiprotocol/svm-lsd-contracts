@@ -11,17 +11,8 @@ pub struct EraUnbond<'info> {
     pub stake_manager: Box<Account<'info, StakeManager>>,
 
     #[account(
-        seeds = [
-            helper::POOL_SEED,
-            &stake_manager.key().to_bytes(),
-        ],
-        bump = stake_manager.pool_seed_bump
-    )]
-    pub stake_pool: SystemAccount<'info>,
-
-    #[account(
         mut,
-        address = stake_manager.staking_program @Errors::SpStakePoolNotMatch,
+        address = stake_manager.staking_pool @Errors::SpStakePoolNotMatch,
     )]
     pub staking_pool: Box<Account<'info, staking_program::StakingPool>>,
 
@@ -59,7 +50,7 @@ impl<'info> EraUnbond<'info> {
         let diff = self.stake_manager.pending_unbond - self.stake_manager.pending_bond;
 
         let cpi_accounts = staking_program::cpi::accounts::Unstake {
-            user: self.stake_pool.to_account_info(),
+            user: self.stake_manager.to_account_info(),
             rent_payer: self.fee_and_rent_payer.to_account_info(),
             staking_pool: self.staking_pool.to_account_info(),
             stake_account: self.staking_stake_account.to_account_info(),
@@ -72,8 +63,9 @@ impl<'info> EraUnbond<'info> {
                 self.staking_program.to_account_info(),
                 cpi_accounts,
                 &[&[
-                    helper::POOL_SEED,
-                    &self.stake_manager.key().to_bytes(),
+                    helper::STAKE_MANAGER_SEED,
+                    &self.stake_manager.creator.to_bytes(),
+                    &[self.stake_manager.index],
                     &[self.stake_manager.pool_seed_bump],
                 ]],
             ),

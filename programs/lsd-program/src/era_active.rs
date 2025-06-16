@@ -6,16 +6,17 @@ use anchor_spl::token_interface::{mint_to, Mint, MintTo, TokenAccount, TokenInte
 #[derive(Accounts)]
 pub struct EraActive<'info> {
     #[account(mut)]
-    pub stake_manager: Box<Account<'info, StakeManager>>,
+    pub rent_payer: Signer<'info>,
 
+    /// CHECK: stake_manager
     #[account(
-        seeds = [
-            helper::POOL_SEED,
-            &stake_manager.key().to_bytes(),
-        ],
-        bump = stake_manager.pool_seed_bump
+        mut,
+        address = stake_manager.admin @Errors::AdminNotMatch
     )]
-    pub stake_pool: SystemAccount<'info>,
+    pub admin: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_manager: Box<Account<'info, StakeManager>>,
 
     #[account(
         mut,
@@ -31,15 +32,16 @@ pub struct EraActive<'info> {
     #[account(
         mut,
         associated_token::mint = staking_token_mint,
-        associated_token::authority = stake_pool,
+        associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
-    pub pool_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = rent_payer,
         associated_token::mint = lsd_token_mint,
-        associated_token::authority = stake_manager.admin,
+        associated_token::authority = admin,
         associated_token::token_program = token_program,
     )]
     pub platform_fee_recipient: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -49,8 +51,6 @@ pub struct EraActive<'info> {
         address = stake_manager.staking_program @Errors::SpStakePoolNotMatch,
     )]
     pub staking_pool: Box<Account<'info, staking_program::StakingPool>>,
-
-    pub staking_pool_vault_signer: SystemAccount<'info>,
 
     #[account(mut)]
     pub staking_pool_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -85,11 +85,11 @@ impl<'info> EraActive<'info> {
         );
 
         let cpi_accounts = staking_program::cpi::accounts::Claim {
-            user: self.stake_pool.to_account_info(),
+            user: self.stake_manager.to_account_info(),
+            rent_payer: self.rent_payer.to_account_info(),
             staking_pool: self.staking_pool.to_account_info(),
-            pool_vault_signer: self.staking_pool_vault_signer.to_account_info(),
             token_mint: self.staking_token_mint.to_account_info(),
-            user_token_account: self.pool_token_account.to_account_info(),
+            user_token_account: self.pool_staking_token_account.to_account_info(),
             pool_token_account: self.staking_pool_token_account.to_account_info(),
             stake_account: self.staking_stake_account.to_account_info(),
             token_program: self.token_program.to_account_info(),
@@ -102,8 +102,9 @@ impl<'info> EraActive<'info> {
                 self.staking_program.to_account_info(),
                 cpi_accounts,
                 &[&[
-                    helper::POOL_SEED,
-                    &self.stake_manager.key().to_bytes(),
+                    helper::STAKE_MANAGER_SEED,
+                    &self.stake_manager.creator.to_bytes(),
+                    &[self.stake_manager.index],
                     &[self.stake_manager.pool_seed_bump],
                 ]],
             ),
@@ -133,11 +134,12 @@ impl<'info> EraActive<'info> {
                     MintTo {
                         mint: self.lsd_token_mint.to_account_info(),
                         to: self.platform_fee_recipient.to_account_info(),
-                        authority: self.stake_pool.to_account_info(),
+                        authority: self.stake_manager.to_account_info(),
                     },
                     &[&[
-                        helper::POOL_SEED,
-                        &self.stake_manager.key().to_bytes(),
+                        helper::STAKE_MANAGER_SEED,
+                        &self.stake_manager.creator.to_bytes(),
+                        &[self.stake_manager.index],
                         &[self.stake_manager.pool_seed_bump],
                     ]],
                 ),

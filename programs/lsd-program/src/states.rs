@@ -5,6 +5,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Debug)]
 pub struct StakeManager {
+    pub creator: Pubkey,
+    pub index: u8,
     pub admin: Pubkey,
     pub pending_admin: Pubkey,
     pub pool_seed_bump: u8,
@@ -113,4 +115,7 @@ pub struct UnstakeAccount {
     pub user: Pubkey,
     pub amount: u64,
     pub withdrawable_era: u64,
+
+    /// Reserved space for future upgrades. Do not use.
+    pub _reserved: [u8; 128],
 }

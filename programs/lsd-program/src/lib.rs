@@ -30,7 +30,7 @@ pub use crate::staker_unstake::*;
 pub use crate::staker_withdraw::*;
 pub use crate::states::*;
 
-declare_id!("CEftts4KkpMPiJg9hccAgqZHvUc3t1hx9VssMUGkX3ec");
+declare_id!("6UrZH8GHxgSHu13ZqUMxHwiUnezXSqnEKDVNEpY1cAPu");
 
 fn check_context<T: Bumps>(ctx: &Context<T>) -> Result<()> {
     if !check_id(ctx.program_id) {
@@ -57,7 +57,7 @@ pub mod lsd_program {
     ) -> Result<()> {
         check_context(&ctx)?;
 
-        ctx.accounts.process(params, ctx.bumps.stake_pool)?;
+        ctx.accounts.process(params, ctx.bumps.stake_manager)?;
 
         Ok(())
     }

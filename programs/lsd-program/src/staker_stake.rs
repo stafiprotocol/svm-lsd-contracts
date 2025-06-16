@@ -10,17 +10,10 @@ pub struct Stake<'info> {
     pub user: Signer<'info>,
 
     #[account(mut)]
-    pub stake_manager: Box<Account<'info, StakeManager>>,
+    pub rent_payer: Signer<'info>,
 
-    #[account(
-        mut,
-        seeds = [
-            helper::POOL_SEED,
-            &stake_manager.key().to_bytes(),
-        ],
-        bump = stake_manager.pool_seed_bump
-    )]
-    pub stake_pool: SystemAccount<'info>,
+    #[account(mut)]
+    pub stake_manager: Box<Account<'info, StakeManager>>,
 
     #[account(
         mut,
@@ -34,7 +27,8 @@ pub struct Stake<'info> {
     pub staking_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer  = rent_payer,
         associated_token::mint = lsd_token_mint,
         associated_token::authority = user,
         associated_token::token_program = token_program,
@@ -52,7 +46,7 @@ pub struct Stake<'info> {
     #[account(
         mut,
         associated_token::mint = staking_token_mint,
-        associated_token::authority = stake_pool,
+        associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
     pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
@@ -106,11 +100,12 @@ impl<'info> Stake<'info> {
                 MintTo {
                     mint: self.lsd_token_mint.to_account_info(),
                     to: self.user_lsd_token_account.to_account_info(),
-                    authority: self.stake_pool.to_account_info(),
+                    authority: self.stake_manager.to_account_info(),
                 },
                 &[&[
-                    helper::POOL_SEED,
-                    &self.stake_manager.key().to_bytes(),
+                    helper::STAKE_MANAGER_SEED,
+                    &self.stake_manager.creator.to_bytes(),
+                    &[self.stake_manager.index],
                     &[self.stake_manager.pool_seed_bump],
                 ]],
             ),

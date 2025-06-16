@@ -89,6 +89,7 @@ impl<'info> Unstake<'info> {
             user: self.user.key(),
             amount: staking_token_amount,
             withdrawable_era: self.stake_manager.latest_era + self.stake_manager.unbonding_duration,
+            _reserved: [0u8; 128],
         });
 
         emit!(EventUnstake {

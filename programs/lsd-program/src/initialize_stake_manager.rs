@@ -2,10 +2,12 @@ pub use crate::errors::Errors;
 pub use crate::StakeManager;
 use crate::{helper, EraStatus};
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::Mint;
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use staking_program;
 
 #[derive(Accounts)]
+#[instruction(params: InitializeStakeManagerParams)]
 pub struct InitializeStakeManager<'info> {
     pub admin: Signer<'info>,
 
@@ -13,24 +15,51 @@ pub struct InitializeStakeManager<'info> {
     pub rent_payer: Signer<'info>,
 
     #[account(
-        zero,
-        rent_exempt = enforce,
-    )]
-    pub stake_manager: Box<Account<'info, StakeManager>>,
-
-    #[account(
+        init,
+        space = 2048,
+        payer = rent_payer,
         seeds = [
-            helper::POOL_SEED,
-            &stake_manager.key().to_bytes(),
+            helper::STAKE_MANAGER_SEED,
+            &admin.key().to_bytes(),
+            &[params.index],
         ],
         bump,
     )]
-    pub stake_pool: SystemAccount<'info>,
+    pub stake_manager: Box<Account<'info, StakeManager>>,
 
     pub staking_pool: Box<Account<'info, staking_program::StakingPool>>,
 
+    #[account(
+        init,
+        payer = rent_payer,
+        mint::decimals = 9,
+        mint::authority = stake_manager,
+        mint::freeze_authority = stake_manager,
+        seeds = [
+            helper::TOKEN_MINT_SEED,
+            &admin.key().to_bytes(),
+            &[params.index],
+        ],
+        bump,
+    )]
     pub lsd_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    #[account(
+        address = staking_pool.token_mint @Errors::StakingTokenMintAccountNotMatch
+    )]
+    pub staking_token_mint: Box<InterfaceAccount<'info, Mint>>,
+
+    #[account(
+        init,
+        payer  = rent_payer,
+        associated_token::mint = staking_token_mint,
+        associated_token::authority = stake_manager,
+        associated_token::token_program = token_program,
+    )]
+    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
@@ -38,6 +67,7 @@ pub struct InitializeStakeManager<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct InitializeStakeManagerParams {
     pub era_seconds: i64,
+    pub index: u8,
 }
 
 impl<'info> InitializeStakeManager<'info> {
@@ -48,17 +78,6 @@ impl<'info> InitializeStakeManager<'info> {
     ) -> Result<()> {
         require_gt!(params.era_seconds, 0, Errors::ParamsNotMatch);
 
-        require!(
-            self.lsd_token_mint
-                .mint_authority
-                .contains(&self.stake_pool.key()),
-            Errors::MintAuthorityNotMatch
-        );
-        require!(
-            self.lsd_token_mint.freeze_authority.is_none(),
-            Errors::FreezeAuthorityNotMatch
-        );
-        require!(self.lsd_token_mint.supply == 0, Errors::MintSupplyNotEmpty);
         let timestamp = Clock::get().unwrap().unix_timestamp;
         let offset = 0 - timestamp / params.era_seconds;
 
@@ -66,7 +85,9 @@ impl<'info> InitializeStakeManager<'info> {
             self.staking_pool.unbonding_seconds / params.era_seconds as u64 + 1;
 
         self.stake_manager.set_inner(StakeManager {
+            creator: self.admin.key(),
             admin: self.admin.key(),
+            index: params.index,
             pending_admin: Pubkey::default(),
             lsd_token_mint: self.lsd_token_mint.key(),
             staking_token_mint: self.staking_pool.token_mint.key(),
