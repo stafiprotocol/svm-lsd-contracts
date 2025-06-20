@@ -56,7 +56,7 @@ pub struct InitializeStakeManager<'info> {
         associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
-    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_manager_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,

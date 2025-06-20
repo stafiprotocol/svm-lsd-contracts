@@ -49,7 +49,7 @@ pub struct Stake<'info> {
         associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
-    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_manager_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -79,7 +79,7 @@ impl<'info> Stake<'info> {
             TransferChecked {
                 from: self.user_staking_token_account.to_account_info(),
                 mint: self.staking_token_mint.to_account_info(),
-                to: self.pool_staking_token_account.to_account_info(),
+                to: self.stake_manager_staking_token_account.to_account_info(),
                 authority: self.user.to_account_info(),
             },
         );

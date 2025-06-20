@@ -1,28 +1,16 @@
 use crate::{helper, Errors, StakeManager};
-use anchor_lang::context::CpiContext;
 use anchor_lang::prelude::*;
-
-use anchor_spl::{
-    metadata::{
-        create_metadata_accounts_v3, mpl_token_metadata::types::DataV2, CreateMetadataAccountsV3,
-        Metadata,
-    },
-    token_interface::Mint,
+use anchor_spl::token_interface::TokenInterface;
+use anchor_spl::{metadata::Metadata, token_interface::Mint};
+use mpl_token_metadata::{
+    instructions::CreateV1Cpi, instructions::CreateV1CpiAccounts,
+    instructions::CreateV1InstructionArgs, types::TokenStandard,
 };
 
 #[derive(Accounts)]
-pub struct CreateMetadataAccountV3<'info> {
+pub struct CreateMetadataV1<'info> {
     #[account(mut)]
     pub fee_and_rent_payer: Signer<'info>,
-
-    /// CHECK: Validate address by deriving pda
-    #[account(
-        mut,
-        seeds = [b"metadata", token_metadata_program.key().as_ref(), lsd_token_mint.key().as_ref()],
-        bump,
-        seeds::program = token_metadata_program.key(),
-    )]
-    pub metadata_account: UncheckedAccount<'info>,
 
     pub admin: Signer<'info>,
     #[account(
@@ -36,9 +24,21 @@ pub struct CreateMetadataAccountV3<'info> {
         address = stake_manager.lsd_token_mint @Errors::LsdTokenMintAccountNotMatch
     )]
     pub lsd_token_mint: Box<InterfaceAccount<'info, Mint>>,
-    pub token_metadata_program: Program<'info, Metadata>,
+
+    /// CHECK: Validate address by deriving pda
+    #[account(
+         mut,
+         seeds = [b"metadata", metadata_program.key().as_ref(), lsd_token_mint.key().as_ref()],
+         bump,
+         seeds::program = metadata_program.key(),
+     )]
+    pub metadata_account: UncheckedAccount<'info>,
+
+    pub token_program: Interface<'info, TokenInterface>,
+    pub metadata_program: Program<'info, Metadata>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
+    /// CHECK:
+    pub sysvar_instruction: UncheckedAccount<'info>,
 }
 
 #[repr(C)]
@@ -49,9 +49,9 @@ pub struct CreateMetadataParams {
     token_uri: String,
 }
 
-impl<'info> CreateMetadataAccountV3<'info> {
+impl<'info> CreateMetadataV1<'info> {
     pub fn process(&mut self, config_metadata_params: CreateMetadataParams) -> Result<()> {
-        msg!("Creating metadata v3");
+        msg!("Creating metadata v1");
 
         let signer_seeds: &[&[&[u8]]] = &[&[
             helper::STAKE_MANAGER_SEED,
@@ -59,34 +59,37 @@ impl<'info> CreateMetadataAccountV3<'info> {
             &[self.stake_manager.index],
             &[self.stake_manager.pool_seed_bump],
         ]];
-
-        create_metadata_accounts_v3(
-            CpiContext::new(
-                self.token_metadata_program.to_account_info(),
-                CreateMetadataAccountsV3 {
-                    metadata: self.metadata_account.to_account_info(),
-                    mint: self.lsd_token_mint.to_account_info(),
-                    mint_authority: self.stake_manager.to_account_info(),
-                    update_authority: self.stake_manager.to_account_info(),
-                    payer: self.fee_and_rent_payer.to_account_info(),
-                    system_program: self.system_program.to_account_info(),
-                    rent: self.rent.to_account_info(),
-                },
-            )
-            .with_signer(signer_seeds),
-            DataV2 {
+        CreateV1Cpi::new(
+            &self.metadata_program.to_account_info(),
+            CreateV1CpiAccounts {
+                metadata: &self.metadata_account.to_account_info(),
+                master_edition: None,
+                mint: (&self.lsd_token_mint.to_account_info(), false),
+                authority: &self.stake_manager.to_account_info(),
+                payer: &self.fee_and_rent_payer.to_account_info(),
+                update_authority: (&self.stake_manager.to_account_info(), false),
+                system_program: &self.system_program.to_account_info(),
+                sysvar_instructions: &self.sysvar_instruction.to_account_info(),
+                spl_token_program: &self.token_program.to_account_info(),
+            },
+            CreateV1InstructionArgs {
                 name: config_metadata_params.token_name,
                 symbol: config_metadata_params.token_symbol,
                 uri: config_metadata_params.token_uri,
                 seller_fee_basis_points: 0,
                 creators: None,
+                primary_sale_happened: false,
+                is_mutable: true,
+                token_standard: TokenStandard::Fungible,
                 collection: None,
                 uses: None,
+                collection_details: None,
+                rule_set: None,
+                decimals: None,
+                print_supply: None,
             },
-            true, // Is mutable
-            true, // Update authority is signer
-            None, // Collection details
-        )?;
+        )
+        .invoke_signed(signer_seeds)?;
 
         Ok(())
     }

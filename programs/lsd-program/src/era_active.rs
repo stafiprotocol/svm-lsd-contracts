@@ -35,7 +35,7 @@ pub struct EraActive<'info> {
         associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
-    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_manager_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,
@@ -89,7 +89,7 @@ impl<'info> EraActive<'info> {
             rent_payer: self.rent_payer.to_account_info(),
             staking_pool: self.staking_pool.to_account_info(),
             token_mint: self.staking_token_mint.to_account_info(),
-            user_token_account: self.pool_staking_token_account.to_account_info(),
+            user_token_account: self.stake_manager_staking_token_account.to_account_info(),
             pool_token_account: self.staking_pool_token_account.to_account_info(),
             stake_account: self.staking_stake_account.to_account_info(),
             token_program: self.token_program.to_account_info(),

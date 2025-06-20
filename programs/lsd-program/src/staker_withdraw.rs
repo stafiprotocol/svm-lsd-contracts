@@ -46,7 +46,7 @@ pub struct Withdraw<'info> {
         associated_token::authority = stake_manager,
         associated_token::token_program = token_program,
     )]
-    pub pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_manager_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -78,7 +78,7 @@ impl<'info> Withdraw<'info> {
         let withdraw_amount = self.unstake_account.amount;
 
         require_gte!(
-            self.pool_staking_token_account.amount,
+            self.stake_manager_staking_token_account.amount,
             withdraw_amount,
             Errors::PoolBalanceNotEnough
         );
@@ -89,7 +89,7 @@ impl<'info> Withdraw<'info> {
             CpiContext::new_with_signer(
                 self.token_program.to_account_info(),
                 TransferChecked {
-                    from: self.pool_staking_token_account.to_account_info(),
+                    from: self.stake_manager_staking_token_account.to_account_info(),
                     mint: self.staking_token_mint.to_account_info(),
                     to: self.user_staking_token_account.to_account_info(),
                     authority: self.stake_manager.to_account_info(),

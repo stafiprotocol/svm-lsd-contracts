@@ -96,7 +96,7 @@ pub mod lsd_program {
 
     // metadata
     pub fn create_metadata(
-        ctx: Context<CreateMetadataAccountV3>,
+        ctx: Context<CreateMetadataV1>,
         params: CreateMetadataParams,
     ) -> Result<()> {
         check_context(&ctx)?;
