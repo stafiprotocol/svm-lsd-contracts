@@ -1,4 +1,4 @@
-use crate::{helper, EraStatus, Errors, StakeManager};
+use crate::{helper, Errors, StakeManager};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
@@ -23,13 +23,13 @@ pub struct EraWithdraw<'info> {
     pub staking_token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(mut)]
-    pub pool_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_manager_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub staking_pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
     pub staking_unstake_account: Box<Account<'info, staking_program::UnstakeAccount>>,
-
-    #[account(mut)]
-    pub staking_pool_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: staking_program
     #[account(
@@ -51,10 +51,6 @@ impl<'info> EraWithdraw<'info> {
     pub fn process(&mut self) -> Result<()> {
         let timestamp = Clock::get()?.unix_timestamp as u64;
         require!(
-            self.stake_manager.era_status == EraStatus::EraUpdated,
-            Errors::EraStatusNotMatch
-        );
-        require!(
             self.staking_unstake_account.withdrawable_timestamp <= timestamp,
             Errors::UnstakeAccountNotWithdrawable
         );
@@ -64,8 +60,8 @@ impl<'info> EraWithdraw<'info> {
             rent_payer: self.fee_and_rent_payer.to_account_info(),
             staking_pool: self.staking_pool.to_account_info(),
             token_mint: self.staking_token_mint.to_account_info(),
-            user_token_account: self.pool_token_account.to_account_info(),
-            pool_token_account: self.staking_pool_token_account.to_account_info(),
+            user_token_account: self.stake_manager_staking_token_account.to_account_info(),
+            pool_token_account: self.staking_pool_staking_token_account.to_account_info(),
             unstake_account: self.staking_unstake_account.to_account_info(),
             token_program: self.token_program.to_account_info(),
             associated_token_program: self.associated_token_program.to_account_info(),

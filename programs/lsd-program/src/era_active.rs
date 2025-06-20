@@ -53,7 +53,7 @@ pub struct EraActive<'info> {
     pub staking_pool: Box<Account<'info, staking_program::StakingPool>>,
 
     #[account(mut)]
-    pub staking_pool_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub staking_pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
     pub staking_stake_account: Box<Account<'info, staking_program::StakeAccount>>,
@@ -90,7 +90,7 @@ impl<'info> EraActive<'info> {
             staking_pool: self.staking_pool.to_account_info(),
             token_mint: self.staking_token_mint.to_account_info(),
             user_token_account: self.stake_manager_staking_token_account.to_account_info(),
-            pool_token_account: self.staking_pool_token_account.to_account_info(),
+            pool_token_account: self.staking_pool_staking_token_account.to_account_info(),
             stake_account: self.staking_stake_account.to_account_info(),
             token_program: self.token_program.to_account_info(),
             associated_token_program: self.associated_token_program.to_account_info(),
