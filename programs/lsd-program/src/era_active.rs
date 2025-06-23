@@ -55,6 +55,7 @@ pub struct EraActive<'info> {
     #[account(mut)]
     pub staking_pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    #[account(mut)]
     pub staking_stake_account: Box<Account<'info, staking_program::StakeAccount>>,
 
     /// CHECK: staking_program

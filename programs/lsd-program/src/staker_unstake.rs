@@ -1,5 +1,5 @@
 use crate::{Errors, StakeManager, UnstakeAccount};
-use anchor_lang::{prelude::*, solana_program::system_program};
+use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{burn, Burn, Mint, TokenAccount, TokenInterface};
 
@@ -7,10 +7,7 @@ use anchor_spl::token_interface::{burn, Burn, Mint, TokenAccount, TokenInterface
 pub struct Unstake<'info> {
     pub user: Signer<'info>,
 
-    #[account(
-        mut,
-        owner = system_program::ID
-    )]
+    #[account(mut)]
     pub rent_payer: Signer<'info>,
 
     #[account(mut)]

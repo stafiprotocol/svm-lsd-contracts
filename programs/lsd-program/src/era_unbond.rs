@@ -20,7 +20,7 @@ pub struct EraUnbond<'info> {
     pub staking_stake_account: Box<Account<'info, staking_program::StakeAccount>>,
 
     #[account(mut)]
-    pub staking_unstake_account: Box<Account<'info, staking_program::UnstakeAccount>>,
+    pub staking_unstake_account: Signer<'info>,
 
     /// CHECK: staking_program
     #[account(
