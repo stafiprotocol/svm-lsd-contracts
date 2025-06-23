@@ -65,6 +65,9 @@ pub enum Errors {
     #[msg("staking_program stake pool not match")]
     SpStakePoolNotMatch,
 
+    #[msg("staking_program stake account not match")]
+    SpStakeAccountNotMatch,
+
     #[msg("Mint authority not match")]
     MintAuthorityNotMatch,
 

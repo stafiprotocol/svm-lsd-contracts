@@ -2295,7 +2295,7 @@ dependencies = [
 [[package]]
 name = "staking_program"
 version = "0.1.0"
-source = "git+https://github.com/stafiprotocol/svm-staking-contracts.git?rev=a3209a141c4db624d05c0bd1053780167e30b48e#a3209a141c4db624d05c0bd1053780167e30b48e"
+source = "git+https://github.com/stafiprotocol/svm-staking-contracts.git?rev=dfd91be2a01a2d8333d4f33d85a7ee8c05b5ea14#dfd91be2a01a2d8333d4f33d85a7ee8c05b5ea14"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

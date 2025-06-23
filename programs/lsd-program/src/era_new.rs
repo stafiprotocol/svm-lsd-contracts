@@ -1,4 +1,4 @@
-use crate::{EraStatus, Errors, StakeManager};
+use crate::{helper, EraStatus, Errors, StakeManager};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -37,6 +37,14 @@ impl<'info> EraNew<'info> {
                 self.stake_manager.pending_bond - self.stake_manager.pending_unbond;
             self.stake_manager.pending_unbond = 0;
             self.stake_manager.era_status = EraStatus::Bonded;
+        }
+
+        if self.stake_manager.rate == helper::DEFAULT_RATE
+            && self.stake_manager.active < self.stake_manager.staking_min_stake_amount
+            && self.stake_manager.active + self.stake_manager.pending_unbond
+                == self.stake_manager.pending_bond
+        {
+            self.stake_manager.era_status = EraStatus::ActiveUpdated;
         }
 
         self.stake_manager.latest_era = new_era;

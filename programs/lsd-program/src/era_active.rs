@@ -48,14 +48,13 @@ pub struct EraActive<'info> {
 
     #[account(
         mut,
-        address = stake_manager.staking_program @Errors::SpStakePoolNotMatch,
+        address = stake_manager.staking_pool @Errors::SpStakePoolNotMatch,
     )]
     pub staking_pool: Box<Account<'info, staking_program::StakingPool>>,
 
     #[account(mut)]
     pub staking_pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(mut)]
     pub staking_stake_account: Box<Account<'info, staking_program::StakeAccount>>,
 
     /// CHECK: staking_program
@@ -82,6 +81,12 @@ impl<'info> EraActive<'info> {
             self.stake_manager.era_status == EraStatus::Bonded
                 || self.stake_manager.era_status == EraStatus::Unbonded,
             Errors::EraStatusNotMatch
+        );
+        require!(
+            self.staking_stake_account.to_account_info().owner.key() == self.staking_program.key()
+                && self.staking_stake_account.user.key() == self.stake_manager.key()
+                && self.staking_stake_account.staking_pool.key() == self.staking_pool.key(),
+            Errors::SpStakeAccountNotMatch
         );
 
         let cpi_accounts = staking_program::cpi::accounts::Claim {

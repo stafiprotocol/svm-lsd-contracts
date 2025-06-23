@@ -34,8 +34,9 @@ pub struct EraBond<'info> {
     #[account(mut)]
     pub staking_pool_staking_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// CHECK: staking_program
     #[account(mut)]
-    pub staking_stake_account: Box<Account<'info, staking_program::StakeAccount>>,
+    pub staking_stake_account: AccountInfo<'info>,
 
     /// CHECK: staking_program
     #[account(
