@@ -1,5 +1,3 @@
 # SVM Liquid Staking Contracts
 
-Staking Vault as a Service revolutionizes the liquid staking landscape by dramatically simplifying the technical and operational challenges that token teams face. This innovative service enables any token ecosystem to seamlessly integrate staking capabilities, boost token demand, and establish sustainable reward mechanisms — all while maintaining full compatibility with the broader DeFi ecosystem.
-
 StaFi's SVM Liquid Staking module serves as a comprehensive solution for token teams seeking to deploy LSD (Liquid Staking Derivatives) projects through the Staking Vault infrastructure. This powerful module delivers complete LSD functionality tailored for project teams. The system architecture features multiple stake managers and stake pools, each representing a distinct project entity managed by an authorized admin account with privileged access to configure stake manager parameters. Participants can seamlessly execute staking, unstaking, and withdrawal operations with their chosen project partner.
